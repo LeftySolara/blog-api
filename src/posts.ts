@@ -1,8 +1,9 @@
 import { Hono } from "hono";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import db from "./db";
-import { postsTable } from "./db/schema";
+import { postsTable, postsTagsTable, tagsTable } from "./db/schema";
 
 const CreatePostRequestSchema = z
   .object({
@@ -10,8 +11,11 @@ const CreatePostRequestSchema = z
     content: z.string(),
     published: z.boolean(),
     publicationDate: z.string().date(),
+    tags: z.array(z.string()),
   })
-  .partial({ publicationDate: true });
+  .partial({ publicationDate: true, tags: true });
+
+type CreatePostRequestBody = z.infer<typeof CreatePostRequestSchema>;
 
 const app = new Hono();
 
@@ -27,7 +31,6 @@ app.get("/:id", (c) => {
   return c.text(`This route returns the blog post with ID ${id}.`);
 });
 
-// TODO: add ability to include tags in request
 app.post(
   "/",
   zValidator("json", CreatePostRequestSchema, (result, c) => {
@@ -42,10 +45,43 @@ app.post(
     }
   }),
   async (c) => {
-    const reqBody = await c.req.json();
+    const reqBody: CreatePostRequestBody = await c.req.json();
 
     try {
-      await db.insert(postsTable).values(reqBody);
+      const createdPost = await db
+        .insert(postsTable)
+        .values(reqBody)
+        .returning({ id: postsTable.id });
+
+      const postId = createdPost[0].id;
+
+      // Add tags to database if they don't exist
+      if (reqBody["tags"]) {
+        await db.transaction(async (tx) => {
+          for (const tag of reqBody["tags"] as Array<string>) {
+            const existingTags = await tx
+              .select()
+              .from(tagsTable)
+              .where(eq(tagsTable.title, tag));
+
+            let tagId: number;
+            if (existingTags.length === 0) {
+              // Create the tag if it doesn't exist.
+              const createdTag = await tx
+                .insert(tagsTable)
+                .values({ title: tag })
+                .returning({ id: tagsTable.id });
+
+              tagId = createdTag[0].id;
+            } else {
+              tagId = existingTags[0].id;
+            }
+
+            // Associate the tag with the post.
+            await tx.insert(postsTagsTable).values({ postId, tagId });
+          }
+        });
+      }
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Error creating post.";
