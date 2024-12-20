@@ -11,5 +11,12 @@
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@db/*": ["src/db/*"],
+      "@entities/*": ["src/entities/*"],
+      "@repositories/*": ["src/repositories/*"],
+      "@utils/*": ["src/utils/*"]
+    }
   },
 }

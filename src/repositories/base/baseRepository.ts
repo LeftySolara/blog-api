@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { IRead } from "../interfaces/IRead";
-import type { IWrite } from "../interfaces/IWrite";
-import type { dbType } from "../../db";
+import type { IRead } from "@repositories/interfaces/IRead";
+import type { IWrite } from "@repositories/interfaces/IWrite";
+import type { dbType } from "@db/index";
 
 abstract class BaseRepository<T> implements IWrite<T>, IRead<T> {
   public readonly db: dbType;
