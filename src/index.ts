@@ -1,5 +1,6 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import logger from "@utils/logger";
 import posts from "./posts";
 
 const app = new Hono();
@@ -10,14 +11,10 @@ app.get("/", (c) => {
   return c.text("Hello Hono!");
 });
 
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-
 app.route("/posts", posts);
 
-/* eslint-enable @typescript-eslint/no-unsafe-argument */
-
 const port = 3000;
-console.log(`Server is running on http://localhost:${port}`);
+logger.info(`Server is running on http://localhost:${port}`);
 
 serve({
   fetch: app.fetch,
