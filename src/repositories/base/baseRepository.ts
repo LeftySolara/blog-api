@@ -1,7 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { IRead } from "../interfaces/IRead";
 import type { IWrite } from "../interfaces/IWrite";
+import type { dbType } from "../../db";
 
 abstract class BaseRepository<T> implements IWrite<T>, IRead<T> {
+  public readonly db: dbType;
+
+  constructor(db: dbType) {
+    this.db = db;
+  }
+
   create(item: T): Promise<boolean> {
     throw new Error("Method not implemented.");
   }

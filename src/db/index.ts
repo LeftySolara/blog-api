@@ -8,4 +8,5 @@ if (!dbURL) {
 
 const db = drizzle(dbURL);
 
+export type dbType = typeof db;
 export default db;
