@@ -1,9 +1,12 @@
 import { Hono } from "hono";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import db from "./db";
-import { postsTable, postsTagsTable, tagsTable } from "./db/schema";
+import PostRepository from "@repositories/postRepository";
+import AppError from "@utils/appError/appError";
+import commonErrors from "@utils/appError/commonErrors";
+import { commonHTTPErrors } from "@utils/appError/commonHTTPErrors";
+import type { StatusCode } from "hono/utils/http-status";
 
 const CreatePostRequestSchema = z
   .object({
@@ -46,53 +49,28 @@ app.post(
   }),
   async (c) => {
     const reqBody: CreatePostRequestBody = await c.req.json();
+    const postRepo = new PostRepository(db);
 
     try {
-      const createdPost = await db
-        .insert(postsTable)
-        .values(reqBody)
-        .returning({ id: postsTable.id });
-
-      const postId = createdPost[0].id;
-
-      // Add tags to database if they don't exist
-      if (reqBody["tags"]) {
-        await db.transaction(async (tx) => {
-          for (const tag of reqBody["tags"] as Array<string>) {
-            const existingTags = await tx
-              .select()
-              .from(tagsTable)
-              .where(eq(tagsTable.title, tag));
-
-            let tagId: number;
-            if (existingTags.length === 0) {
-              // Create the tag if it doesn't exist.
-              const createdTag = await tx
-                .insert(tagsTable)
-                .values({ title: tag })
-                .returning({ id: tagsTable.id });
-
-              tagId = createdTag[0].id;
-            } else {
-              tagId = existingTags[0].id;
-            }
-
-            // Associate the tag with the post.
-            await tx.insert(postsTagsTable).values({ postId, tagId });
-          }
-        });
+      const result = await postRepo.create(reqBody);
+      if (!result) {
+        throw new AppError(
+          commonErrors.internalServerError,
+          commonHTTPErrors.internalServerError,
+          "Error creating post.",
+          false,
+        );
       }
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Error creating post.";
-
-      return c.json(
-        {
-          ok: false,
-          message,
-        },
-        500,
-      );
+      if (err instanceof AppError) {
+        return c.json(
+          {
+            ok: false,
+            message: err.message,
+          },
+          err.httpCode as StatusCode,
+        );
+      }
     }
 
     return c.json(
@@ -100,7 +78,7 @@ app.post(
         ok: true,
         message: "Post created.",
       },
-      201,
+      commonHTTPErrors.created as StatusCode,
     );
   },
 );

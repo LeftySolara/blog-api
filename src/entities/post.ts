@@ -4,8 +4,8 @@ class Post implements IPost {
   title: string;
   content: string;
   published: boolean;
-  publicationDate: Date;
-  tags: string[];
+  publicationDate?: string | undefined;
+  tags?: string[] | undefined;
 
   constructor(postData: IPost) {
     this.title = postData.title;
