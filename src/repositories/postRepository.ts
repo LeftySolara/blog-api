@@ -3,6 +3,9 @@ import { postsTable, postsTagsTable, tagsTable } from "@db/schema";
 import type Post from "@entities/post";
 import BaseRepository from "@repositories/base/baseRepository";
 import logger from "@utils/logger";
+import AppError from "@utils/appError/appError";
+import commonErrors from "@utils/appError/commonErrors";
+import { commonHTTPErrors } from "@utils/appError/commonHTTPErrors";
 
 class PostRepository extends BaseRepository<Post> {
   async create(item: Post): Promise<boolean> {
@@ -49,6 +52,23 @@ class PostRepository extends BaseRepository<Post> {
     }
 
     return Promise.resolve(true);
+  }
+
+  async find(): Promise<Post[]> {
+    try {
+      const posts: Post[] = await this.db.select().from(postsTable);
+      return await Promise.resolve(posts);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        logger.error(err.message);
+      }
+      throw new AppError(
+        commonErrors.internalServerError,
+        commonHTTPErrors.internalServerError,
+        "Error fetching posts.",
+        true,
+      );
+    }
   }
 }
 

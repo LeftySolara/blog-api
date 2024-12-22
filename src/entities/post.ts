@@ -4,7 +4,7 @@ class Post implements IPost {
   title: string;
   content: string;
   published: boolean;
-  publicationDate?: string | undefined;
+  publicationDate?: string | null | undefined;
   tags?: string[] | undefined;
 
   constructor(postData: IPost) {

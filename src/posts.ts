@@ -22,11 +22,31 @@ type CreatePostRequestBody = z.infer<typeof CreatePostRequestSchema>;
 
 const app = new Hono();
 
-app.get("/", (c) => {
-  return c.json({
-    ok: true,
-    message: "This route returns a list of blog posts.",
-  });
+app.get("/", async (c) => {
+  try {
+    const postRepo = new PostRepository(db);
+    const posts = await postRepo.find();
+
+    return c.json({
+      ok: true,
+      posts,
+    });
+  } catch (err: unknown) {
+    if (err instanceof AppError) {
+      return c.json(
+        {
+          ok: false,
+          message: err.message,
+        },
+        err.httpCode as StatusCode,
+      );
+    } else {
+      return c.json({
+        ok: false,
+        message: "Unknown error.",
+      });
+    }
+  }
 });
 
 app.get("/:id", (c) => {
