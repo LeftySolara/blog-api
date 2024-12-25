@@ -1,5 +1,14 @@
 {
   "name": "blog-api",
+  "version": "0.0.1",
+  "description": "A simple API for managing posts in a personal blog",
+  "homepage": "https://github.com/LeftySolara/blog-api",
+  "author": {
+    "name": "Julianne Adams",
+    "email": "julianne@julianneadams.dev",
+    "url": "https://julianneadams.dev"
+  },
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts"
